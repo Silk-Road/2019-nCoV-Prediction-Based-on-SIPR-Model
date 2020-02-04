@@ -1,0 +1,111 @@
+---
+title: "2019-nCoV Prediction Based on SIPR Model"
+author: "刘晶 zhulincaowu@gmail.com"
+date: "2/4/2020"
+output: html_document
+---
+
+# SIPR Model
+
+这里相关初始化参数引用了[《Modeling Super-spreading Events for Infectious Diseases: Case Study SARS》](https://arxiv.org/pdf/1007.0908.pdf)
+
+```{r, message=FALSE, warning=FALSE}
+library(lubridate)
+library(magrittr)
+library(ggplot2)
+library(ggrepel)
+```
+
+
+```{r}
+# Initialization of parameters
+start_time <- 0
+end_time <- 180
+delta_t <- 1
+n <- ceiling(end_time - start_time) / delta_t
+b <- 0.6489
+nu_1 <- 0.0836
+nu_2 <- 0.0794
+beta <- 0.2586 
+
+# differential equations of S
+de.s <- function(beta, s, i, p) {
+    return(-beta * (i + p) * s)
+}
+# differential equations of I
+de.i <- function(b, beta, i, p, s, nu_1) {
+    return(b * beta * (i + p) * s - nu_1 * i)    
+}
+# differential equations of P
+de.p <- function(b, beta, i, p, s, nu_2) {
+    return((1 - b) * beta * (i + p) * s - nu_2 *p)
+}
+# differential equations of R
+de.r <- function(nu_1, nu_2, i, p) {
+    return(nu_1 * i + nu_2 * p)
+}
+
+# SIPR Model
+SIPR <- function(beta, b, nu_1, nu_2, n) {
+    S <- rep(0, n)
+    I <- rep(0, n)
+    P <- rep(0, n)
+    R <- rep(0, n)
+    S[1] <- 1400000000.0
+    I[1] <- 1.0 
+    P[1] <- 0.0
+    R[1] <- 0
+    N <- S[1] + I[1] + P[1] + R[1]
+    beta = beta / N
+  
+    total <- rep(0, n)
+    total[1] <- N
+
+    for (i in 2:n) {
+        S[i] <- S[i-1] + de.s(beta, S[i-1], I[i-1], P[i-1]) * delta_t
+        I[i] <- I[i-1] + de.i(b, beta, I[i-1], P[i-1], S[i-1], nu_1) * delta_t
+        P[i] <- P[i-1] + de.p(b, beta, I[i-1], P[i-1], S[i-1], nu_2) * delta_t
+        R[i] <- R[i-1] + de.r(nu_1, nu_2, I[i-1], P[i-1]) * delta_t
+        total[i] <- S[i] + I[i] + P[i] + R[i]
+    }
+    df <- data.frame(Time = as_date(as_date("2019-12-01"):(as_date("2019-12-01")+(n-1))), S = S, I = I, P = P, R = R, N = total)
+    return(df)
+}
+
+```
+
+```{r}
+df <- SIPR(beta, b, nu_1, nu_2, n)
+head(df)
+```
+
+```{r}
+df_sipr <- SIPR(beta, b, nu_1, nu_2, n)
+
+gg <- df_sipr %>% ggplot() + 
+    geom_line(aes(x = Time, y = S/N), color = "red",alpha=0.5) +
+    geom_line(aes(x = Time, y = I/N), color = "black",alpha=0.5) + 
+    geom_line(aes(x = Time, y = P/N), color = "skyblue") + 
+    geom_line(aes(x = Time, y = R/N), color = "green",alpha=0.5) +
+    theme(legend.title = element_text(size=12, color = "salmon", face="bold"),
+           legend.justification=c(1,0),
+           legend.position=c(0.95, 0.05),
+           legend.background = element_blank(),
+           legend.key = element_blank()) +
+    labs(title="2019-nCoV Prediction Based on SIPR Model", caption = "Reference paper: https://arxiv.org/pdf/1007.0908.pdf", x = "Time(day)", y = "Ratio") 
+gg
+```
+
+```{r}
+diff <- Sys.Date() - as_date("2019-12-01")
+glue::glue("{Sys.Date()}感染者约有{ceiling(df_sipr$I[diff])}人, ", "另外超级传播者约有{ceiling(df_sipr$P[diff])}人")
+df2 <- data.frame("时间"=df_sipr$Time[(diff-3):(diff+7)], "感染人数"=df_sipr$I[(diff-4):(diff+6)])
+print(df2)
+```
+
+```{r}
+R0 = (1 - b) * beta / nu_2 + b * beta / nu_1
+glue::glue("R0: {R0}")
+```
+
+
