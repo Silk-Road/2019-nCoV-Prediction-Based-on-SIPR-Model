@@ -2,7 +2,7 @@
 
 ---
 
-在公司放假前一天也就是2019年12月21日根据[《Modeling Super-spreading Events for Infectious Diseases: Case Study SARS》](https://arxiv.org/pdf/1007.0908.pdf)参数开发了SIPR模型，当时将结果在内部钉钉群做了分享，虽然到现在才短短两周，但恍如隔世，真的希望这一切没有发生该多少！希望自己一点点微薄的工作能对其他人在这场战役中有所帮助🙏
+在公司放假前一天也就是1月21日根据[《Modeling Super-spreading Events for Infectious Diseases: Case Study SARS》](https://arxiv.org/pdf/1007.0908.pdf)参数开发了SIPR模型，当时将结果在内部钉钉群做了分享，虽然到现在才短短两周，但恍如隔世，真的希望这一切没有发生该多少！希望自己一点点微薄的工作能对其他人在这场战役中有所帮助🙏
 
 - 2019-nCoV Prediction Based on SIPR Model.Rmd: 最初基于那篇论文参数开发的SIPR模型（R语言），截止今天（2月4日）模型精度相对较高
 
